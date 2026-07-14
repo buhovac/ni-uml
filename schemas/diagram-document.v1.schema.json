@@ -1,0 +1,213 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://novinicium.example/schemas/diagram-document.v1.schema.json",
+  "title": "DiagramDocument v1 (uml-use-case)",
+  "type": "object",
+  "required": ["schemaVersion", "diagramType", "metadata", "canvas", "elements", "connections"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "diagramType": { "const": "uml-use-case" },
+    "metadata": {
+      "type": "object",
+      "required": ["title", "createdAt", "updatedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "title": { "type": "string", "maxLength": 300 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "canvas": {
+      "type": "object",
+      "required": ["width", "height", "background", "gridSize", "snapToGrid"],
+      "additionalProperties": false,
+      "properties": {
+        "width": { "type": "number", "minimum": 100, "maximum": 20000 },
+        "height": { "type": "number", "minimum": 100, "maximum": 20000 },
+        "background": { "$ref": "#/definitions/color" },
+        "gridSize": { "type": "number", "minimum": 1, "maximum": 200 },
+        "snapToGrid": { "type": "boolean" }
+      }
+    },
+    "elements": {
+      "type": "array",
+      "maxItems": 2000,
+      "items": { "$ref": "#/definitions/element" }
+    },
+    "connections": {
+      "type": "array",
+      "maxItems": 4000,
+      "items": { "$ref": "#/definitions/connection" }
+    }
+  },
+  "definitions": {
+    "color": {
+      "type": "string",
+      "pattern": "^(#[0-9a-fA-F]{3,8}|none|transparent)$"
+    },
+    "vec2": {
+      "type": "object",
+      "required": ["x", "y"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      }
+    },
+    "size": {
+      "type": "object",
+      "required": ["width", "height"],
+      "additionalProperties": false,
+      "properties": {
+        "width": { "type": "number", "minimum": 1 },
+        "height": { "type": "number", "minimum": 1 }
+      }
+    },
+    "style": {
+      "type": "object",
+      "required": ["fill", "stroke", "strokeWidth", "fontSize"],
+      "additionalProperties": false,
+      "properties": {
+        "fill": { "$ref": "#/definitions/color" },
+        "stroke": { "$ref": "#/definitions/color" },
+        "strokeWidth": { "type": "number", "minimum": 0, "maximum": 20 },
+        "fontSize": { "type": "number", "minimum": 6, "maximum": 96 },
+        "fontFamily": { "type": "string", "maxLength": 200 },
+        "textAlign": { "enum": ["left", "center", "right"] },
+        "opacity": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "elementBase": {
+      "type": "object",
+      "required": ["id", "type", "position", "size", "zIndex", "style", "data"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "parentId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "position": { "$ref": "#/definitions/vec2" },
+        "size": { "$ref": "#/definitions/size" },
+        "rotation": { "type": "number" },
+        "zIndex": { "type": "integer" },
+        "style": { "$ref": "#/definitions/style" }
+      }
+    },
+    "element": {
+      "allOf": [
+        { "$ref": "#/definitions/elementBase" },
+        {
+          "oneOf": [
+            {
+              "properties": {
+                "type": { "const": "uml.actor" },
+                "data": {
+                  "type": "object",
+                  "required": ["label"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "label": { "type": "string", "maxLength": 300 },
+                    "stereotype": { "type": "string", "maxLength": 100 }
+                  }
+                }
+              }
+            },
+            {
+              "properties": {
+                "type": { "const": "uml.use-case" },
+                "data": {
+                  "type": "object",
+                  "required": ["label"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "label": { "type": "string", "maxLength": 300 },
+                    "description": { "type": "string", "maxLength": 2000 }
+                  }
+                }
+              }
+            },
+            {
+              "properties": {
+                "type": { "const": "uml.system-boundary" },
+                "data": {
+                  "type": "object",
+                  "required": ["label"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "label": { "type": "string", "maxLength": 300 }
+                  }
+                }
+              }
+            },
+            {
+              "properties": {
+                "type": { "const": "uml.note" },
+                "data": {
+                  "type": "object",
+                  "required": ["text"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "text": { "type": "string", "maxLength": 4000 }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "endpoint": {
+      "type": "object",
+      "required": ["elementId", "anchorId"],
+      "additionalProperties": false,
+      "properties": {
+        "elementId": { "type": "string" },
+        "anchorId": { "type": "string" }
+      }
+    },
+    "connection": {
+      "type": "object",
+      "required": ["id", "type", "source", "target", "routing", "labels", "style"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "type": {
+          "enum": ["uml.association", "uml.include", "uml.extend", "uml.generalization"]
+        },
+        "source": { "$ref": "#/definitions/endpoint" },
+        "target": { "$ref": "#/definitions/endpoint" },
+        "routing": {
+          "type": "object",
+          "required": ["type", "points"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "straight" },
+            "points": { "type": "array", "items": { "$ref": "#/definitions/vec2" }, "maxItems": 20 }
+          }
+        },
+        "labels": {
+          "type": "array",
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "required": ["text", "position"],
+            "additionalProperties": false,
+            "properties": {
+              "text": { "type": "string", "maxLength": 200 },
+              "position": { "type": "number", "minimum": 0, "maximum": 1 }
+            }
+          }
+        },
+        "style": {
+          "type": "object",
+          "required": ["stroke", "strokeWidth", "arrowEnd"],
+          "additionalProperties": false,
+          "properties": {
+            "stroke": { "$ref": "#/definitions/color" },
+            "strokeWidth": { "type": "number", "minimum": 0, "maximum": 20 },
+            "dash": { "type": "array", "items": { "type": "number", "minimum": 0 }, "maxItems": 8 },
+            "arrowEnd": { "enum": ["none", "open", "triangle-hollow"] }
+          }
+        }
+      }
+    }
+  }
+}
