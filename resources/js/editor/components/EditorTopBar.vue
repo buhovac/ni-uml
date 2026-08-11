@@ -1,9 +1,18 @@
 <script setup lang="ts">
 /**
  * Top bar: naziv (statičan za sada — pravi naziv dolazi s backendom u P6c),
- * undo/redo, zoom prikaz, save status placeholder (P5/P7), export, i
- * dropdown za tip veze koji se koristi za sljedeći connect gesture na
- * canvasu (generiran iz umlUseCaseRegistry.edges, ne hardkodiran).
+ * undo/redo, zoom prikaz, fit view, snap-to-grid toggle, save status
+ * placeholder (P5/P7), export, i dropdown za tip veze koji se koristi za
+ * sljedeći connect gesture na canvasu (generiran iz
+ * umlUseCaseRegistry.edges, ne hardkodiran).
+ *
+ * Snap-to-grid toggle mutira ctx.doc.canvas.snapToGrid DIREKTNO (ne kroz
+ * Command) — ADR-0002 zabranjuje direktnu mutaciju doc.elements/
+ * doc.connections iz UI koda, ali canvas.snapToGrid je postavka platna, ne
+ * element/veza, pa ne nosi undo/redo semantiku (kao ni zoom nivo). Blago
+ * je siva zona jer je ipak dio istog reactive doc objekta — ako se ovo
+ * pokaže pogrešnim (npr. treba undo za snap toggle), lako je kasnije
+ * prebaciti na Command.
  */
 import { useVueFlow } from '@vue-flow/core';
 import { computed, inject } from 'vue';
@@ -15,7 +24,7 @@ import { umlUseCaseRegistry } from '../uml-use-case/definitions';
 const ctx = inject(EDITOR_CONTEXT_KEY)!;
 const { canUndo, canRedo, activeConnectionType } = ctx;
 
-const { viewport } = useVueFlow(ctx.flowId);
+const { viewport, fitView } = useVueFlow(ctx.flowId);
 const zoomPercent = computed(() => Math.round(viewport.value.zoom * 100));
 const connectionTypes = Object.values(umlUseCaseRegistry.edges);
 
@@ -25,6 +34,10 @@ function handleUndo(): void {
 
 function handleRedo(): void {
     ctx.commandManager.redo();
+}
+
+function handleFitView(): void {
+    void fitView();
 }
 
 function handleExport(): void {
@@ -89,6 +102,23 @@ function handleExport(): void {
         <span data-testid="zoom-level" class="text-sm text-muted-foreground"
             >{{ zoomPercent }}%</span
         >
+
+        <Button
+            data-testid="fit-view-button"
+            variant="outline"
+            size="sm"
+            @click="handleFitView"
+            >Fit View</Button
+        >
+
+        <label class="flex items-center gap-1 text-sm text-muted-foreground">
+            <input
+                v-model="ctx.doc.canvas.snapToGrid"
+                type="checkbox"
+                data-testid="snap-to-grid-toggle"
+            />
+            Snap to grid
+        </label>
 
         <div class="ml-auto flex items-center gap-4">
             <span
