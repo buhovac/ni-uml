@@ -6,10 +6,12 @@
  *
  * Vue Flow je za sada u default (apply-default) modu za nodeove — puni
  * controlled mode (:apply-default="false") s NodeChange/EdgeChange
- * filtriranjem dolazi u P3b. Edge tipovi se trenutno crtaju kao Vue Flow
- * built-in 'straight' (bez markera/dash-a po UML tipu veze) — prava
- * per-tip vizualizacija veza (dashed include/extend, hollow triangle
- * generalization) nije dio P3a opsega, vidi sažetak sesije.
+ * filtriranjem dolazi u P3b.
+ *
+ * Edge tipovi: adapter (vueflow-adapter.ts) već projektuje ispravan
+ * `type`/`data.connectionType` po vezi — nije trebalo ništa mijenjati tamo,
+ * samo prestati force-overridati ga na Vue Flow-ov built-in 'straight'
+ * (kako je bilo u P3a) i registrirati UmlEdge komponentu po tipu.
  */
 import { Controls } from '@vue-flow/controls';
 import '@vue-flow/controls/dist/style.css';
@@ -17,10 +19,12 @@ import { ConnectionMode, VueFlow } from '@vue-flow/core';
 import type { Connection, NodeDragEvent } from '@vue-flow/core';
 import '@vue-flow/core/dist/style.css';
 import '@vue-flow/core/dist/theme-default.css';
-import { computed, inject } from 'vue';
+import { inject } from 'vue';
 import { EDITOR_CONTEXT_KEY } from '../adapter/editor-context';
 import { dragStopToCommand } from '../adapter/vueflow-adapter';
 import { AddConnectionCommand } from '../commands/commands';
+import UmlEdge from '../uml-use-case/edges/UmlEdge.vue';
+import UmlEdgeMarkers from '../uml-use-case/edges/UmlEdgeMarkers.vue';
 import { createConnection } from '../uml-use-case/factory';
 import ActorNode from '../uml-use-case/nodes/ActorNode.vue';
 import NoteNode from '../uml-use-case/nodes/NoteNode.vue';
@@ -29,11 +33,6 @@ import UseCaseNode from '../uml-use-case/nodes/UseCaseNode.vue';
 
 const ctx = inject(EDITOR_CONTEXT_KEY)!;
 const { nodes, edges, activeConnectionType } = ctx;
-
-/** Vue Flow ne zna za naše semantičke edge tipove (još nema custom edge komponenti) — crta ih kao 'straight'. */
-const flowEdges = computed(() =>
-    edges.value.map((e) => ({ ...e, type: 'straight' })),
-);
 
 function onNodeDragStop(event: NodeDragEvent): void {
     const dragged = event.nodes.map((n) => ({
@@ -69,13 +68,14 @@ function onConnect(connection: Connection): void {
         <VueFlow
             :id="ctx.flowId"
             v-model:nodes="nodes"
-            :edges="flowEdges"
+            :edges="edges"
             :connection-mode="ConnectionMode.Loose"
             class="h-full w-full"
             @node-drag-stop="onNodeDragStop"
             @connect="onConnect"
         >
             <Controls />
+            <UmlEdgeMarkers />
 
             <template #node-uml-actor="nodeProps">
                 <ActorNode v-bind="nodeProps" />
@@ -88,6 +88,19 @@ function onConnect(connection: Connection): void {
             </template>
             <template #node-uml-note="nodeProps">
                 <NoteNode v-bind="nodeProps" />
+            </template>
+
+            <template #edge-uml-association="edgeProps">
+                <UmlEdge v-bind="edgeProps" />
+            </template>
+            <template #edge-uml-include="edgeProps">
+                <UmlEdge v-bind="edgeProps" />
+            </template>
+            <template #edge-uml-extend="edgeProps">
+                <UmlEdge v-bind="edgeProps" />
+            </template>
+            <template #edge-uml-generalization="edgeProps">
+                <UmlEdge v-bind="edgeProps" />
             </template>
         </VueFlow>
     </section>
