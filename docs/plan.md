@@ -64,18 +64,18 @@ ne radi, arhitektura se korigira prije nastavka.
 
 ---
 
-## Etapa 2 — Stabilni model dokumenta (većim dijelom isporučeno)
+## Etapa 2 — Stabilni model dokumenta ✅
 
 **Cilj:** definirati format koji je temelj cijele aplikacije.
 
 **Status:** TypeScript tipovi (`DiagramDocument`, metadata, canvas, element, connection,
 position, size, stilovi, anchor reference), četiri elementa (`uml.actor`,
 `uml.use-case`, `uml.system-boundary`, `uml.note`), četiri veze, stabilni UUID-evi,
-`schemaVersion`, JSON Schema + Ajv, pravila brisanja (boundary zadržava djecu, uklanja
-`parentId`; veze se brišu) i migracijska infrastruktura — **već postoje u skeletonu**.
-
-**Preostaje:** povezati Ajv validaciju u runtime tok; dodatni unit testovi za rubne
-slučajeve sheme; potvrda roundtripa na složenijem testnom dokumentu.
+`schemaVersion`, JSON Schema + Ajv (validacija sad i u stvarnom `parseDocument` toku,
+ne samo ručna provjera), pravila brisanja (boundary zadržava djecu, uklanja
+`parentId`; veze se brišu), migracijska infrastruktura, i zasebna referencijalna
+provjera veza→elementi (`validateReferentialIntegrity`, izvan JSON sheme jer je
+strukturno validna) — sve gotovo, s unit testovima za rubne slučajeve sheme.
 
 **Kriterij završetka:** složeniji testni dokument može se kreirati u kodu, validirati,
 serializirati, spremiti kao JSON, ponovno učitati i prikazati bez gubitka informacija.
@@ -84,17 +84,21 @@ serializirati, spremiti kao JSON, ponovno učitati i prikazati bez gubitka infor
 
 ---
 
-## Etapa 3 — Command sustav i undo/redo (većim dijelom isporučeno)
+## Etapa 3 — Command sustav i undo/redo (skoro gotovo)
 
 **Cilj:** osigurati da sve izmjene prolaze kroz kontrolirani mehanizam.
 
-**Status:** `Command` interface, `CommandManager` s undo/redo stackovima i čišćenjem
-redo grane, te Add/Move/Resize/Update/Delete/AddConnection/DeleteConnection/
-ChangeParent commandi — **već postoje u skeletonu**, s unit testovima.
+**Status:** `Command` interface, `CommandManager` s undo/redo stackovima (ograničen
+na 100 koraka — najstariji command se tiho izbacuje), čišćenjem redo grane, te
+Add/Move/Resize/Update/Delete/AddConnection/DeleteConnection/ChangeParent/
+`UpdateConnectionCommand` commandi, i tipkovnički prečaci (Cmd/Ctrl+Z,
+Cmd/Ctrl+Shift+Z, Delete/Backspace, Escape) kao samostalan modul
+(`commands/keyboard-shortcuts.ts`) — sve gotovo, s unit testovima.
 
-**Preostaje:** `UpdateConnectionCommand`; maksimalna veličina povijesti; grupiranje
-`pointermove` događaja u jedan move command (jedan drag = jedna history stavka);
-tipkovnički prečaci (Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z, Delete/Backspace, Escape).
+**Preostaje:** grupiranje `pointermove` događaja u jedan move command (jedan drag =
+jedna history stavka) i stvarno kačenje tipkovničkih prečaca na `@keydown` — oboje
+zahtijeva pravu editor stranicu s Vue Flow interakcijom, pa se radi u Etapi 4+5 (P3a/b)
+kad `EditorSpike.vue` bude zamijenjen trajnom stranicom.
 
 **Kriterij završetka:** korisnik gradi mali dijagram, radi ≥10 operacija, vraća ih sve
 unatrag i ponovno unaprijed bez oštećenja dokumenta.
