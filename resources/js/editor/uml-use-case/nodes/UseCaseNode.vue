@@ -4,13 +4,16 @@
  * Stil je uvijek defaultStyle iz registryja (vidi napomenu u ActorNode.vue).
  */
 import type { NodeProps } from '@vue-flow/core';
+import { computed } from 'vue';
 import { umlUseCaseRegistry } from '../definitions';
+import { strokeStyleFor } from './selection-style';
 import UmlNodeHandles from './UmlNodeHandles.vue';
 
 const props = defineProps<NodeProps<{ label: string; elementType: string }>>();
 
 const def = umlUseCaseRegistry.nodes['uml.use-case'];
 const style = def.defaultStyle;
+const strokeStyle = computed(() => strokeStyleFor(style, props.selected));
 </script>
 
 <template>
@@ -30,8 +33,8 @@ const style = def.defaultStyle;
                 rx="50"
                 ry="50"
                 :fill="style.fill"
-                :stroke="style.stroke"
-                :stroke-width="style.strokeWidth"
+                :stroke="strokeStyle.stroke"
+                :stroke-width="strokeStyle.strokeWidth"
             />
         </svg>
         <div

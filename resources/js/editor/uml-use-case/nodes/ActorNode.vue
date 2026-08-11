@@ -20,6 +20,7 @@ import type { NodeProps } from '@vue-flow/core';
 import { computed } from 'vue';
 import { ACTOR_GEOMETRY } from '../definitions';
 import { umlUseCaseRegistry } from '../definitions';
+import { strokeStyleFor } from './selection-style';
 import UmlNodeHandles from './UmlNodeHandles.vue';
 
 const props = defineProps<NodeProps<{ label: string; elementType: string }>>();
@@ -27,6 +28,8 @@ const props = defineProps<NodeProps<{ label: string; elementType: string }>>();
 const def = umlUseCaseRegistry.nodes['uml.actor'];
 const style = def.defaultStyle;
 const g = ACTOR_GEOMETRY;
+
+const strokeStyle = computed(() => strokeStyleFor(style, props.selected));
 
 const width = computed(() => props.dimensions.width || def.defaultSize.width);
 const height = computed(
@@ -60,8 +63,8 @@ const legRightX = computed(() => width.value * 0.85);
                 :cy="headCy"
                 :r="r"
                 fill="none"
-                :stroke="style.stroke"
-                :stroke-width="style.strokeWidth"
+                :stroke="strokeStyle.stroke"
+                :stroke-width="strokeStyle.strokeWidth"
                 stroke-linecap="round"
             />
             <line
@@ -69,8 +72,8 @@ const legRightX = computed(() => width.value * 0.85);
                 :y1="neckY"
                 :x2="cx"
                 :y2="hipY"
-                :stroke="style.stroke"
-                :stroke-width="style.strokeWidth"
+                :stroke="strokeStyle.stroke"
+                :stroke-width="strokeStyle.strokeWidth"
                 stroke-linecap="round"
             />
             <line
@@ -78,8 +81,8 @@ const legRightX = computed(() => width.value * 0.85);
                 :y1="shoulderY"
                 :x2="cx + armHalf"
                 :y2="shoulderY"
-                :stroke="style.stroke"
-                :stroke-width="style.strokeWidth"
+                :stroke="strokeStyle.stroke"
+                :stroke-width="strokeStyle.strokeWidth"
                 stroke-linecap="round"
             />
             <line
@@ -87,8 +90,8 @@ const legRightX = computed(() => width.value * 0.85);
                 :y1="hipY"
                 :x2="legLeftX"
                 :y2="figureH"
-                :stroke="style.stroke"
-                :stroke-width="style.strokeWidth"
+                :stroke="strokeStyle.stroke"
+                :stroke-width="strokeStyle.strokeWidth"
                 stroke-linecap="round"
             />
             <line
@@ -96,8 +99,8 @@ const legRightX = computed(() => width.value * 0.85);
                 :y1="hipY"
                 :x2="legRightX"
                 :y2="figureH"
-                :stroke="style.stroke"
-                :stroke-width="style.strokeWidth"
+                :stroke="strokeStyle.stroke"
+                :stroke-width="strokeStyle.strokeWidth"
                 stroke-linecap="round"
             />
         </svg>
