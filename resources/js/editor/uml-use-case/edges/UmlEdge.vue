@@ -15,6 +15,18 @@
  *
  * stroke/dash/marker/labela računaju se u edge-visuals.ts (čista funkcija,
  * unit testirana) umjesto inline u komponenti.
+ *
+ * PRIPREMA za P4 (ne puna implementacija, vidi P3b prompt): nevidljiva šira
+ * putanja paralelno uz vidljivu liniju, standardni Vue Flow obrazac za
+ * interaction hit-area (isto rade Vue Flow-ove ugrađene edge komponente
+ * preko <BaseEdge>-ovog interactionWidth, samo ručno jer ne koristimo
+ * BaseEdge — vidi napomenu gore). `.vue-flow__edges` ima
+ * pointer-events:none (base stylesheet), pa vidljiva linija ostaje
+ * neklikabilna; hit-area putanja eksplicitno dobije
+ * pointer-events:stroke da NJU bude moguće pogoditi mišem. Namjerno NEMA
+ * @click/@dblclick handlera — klik-select/delete za veze dolazi u P4
+ * zajedno s properties panelom (treba odluka o kombinovanom element/edge
+ * selection stateu).
  */
 import type { EdgeProps } from '@vue-flow/core';
 import { computed } from 'vue';
@@ -38,6 +50,14 @@ const labelPosition = computed(() => ({
 </script>
 
 <template>
+    <path
+        :d="pathD"
+        fill="none"
+        stroke="transparent"
+        stroke-width="16"
+        style="pointer-events: stroke"
+        :data-testid="`connection-hit-area-${id}`"
+    />
     <path
         :d="pathD"
         fill="none"
