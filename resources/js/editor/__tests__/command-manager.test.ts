@@ -5,6 +5,7 @@ import {
   AddElementCommand,
   DeleteElementsCommand,
   MoveElementsCommand,
+  UpdateConnectionCommand,
 } from '../commands/commands'
 import {
   createEmptyDocument
@@ -130,5 +131,52 @@ describe('CommandManager', () => {
     const restored = doc.elements.find((e) => e.id === 'u1')!
     expect(restored.parentId).toBe('b1')
     expect(restored.position).toEqual({ x: 50, y: 60 })
+  })
+
+  it('UpdateConnectionCommand patcha style/labels i undo vraća prijašnje stanje', () => {
+    const doc = createEmptyDocument('Test')
+    const cm = new CommandManager(doc)
+    cm.dispatch(new AddElementCommand(actor('a1')))
+    cm.dispatch(new AddElementCommand(useCase('u1')))
+    cm.dispatch(new AddConnectionCommand(association('c1', 'a1', 'u1')))
+
+    cm.dispatch(
+      new UpdateConnectionCommand('c1', {
+        style: { strokeWidth: 4 },
+        labels: [{ text: '<<include>>', position: 0.5 }],
+      }),
+    )
+
+    const conn = doc.connections[0]
+    expect(conn.style.strokeWidth).toBe(4)
+    expect(conn.style.stroke).toBe('#222') // nepatchano polje ostaje
+    expect(conn.labels).toEqual([{ text: '<<include>>', position: 0.5 }])
+
+    cm.undo()
+    const restored = doc.connections[0]
+    expect(restored.style.strokeWidth).toBe(2)
+    expect(restored.labels).toEqual([])
+  })
+
+  it('undo stack ne raste preko 100 koraka — najstariji command se tiho izbacuje', () => {
+    const doc = createEmptyDocument('Test')
+    const cm = new CommandManager(doc)
+
+    for (let i = 0; i < 105; i++) {
+      cm.dispatch(new AddElementCommand(actor(`a${i}`)))
+    }
+
+    expect(doc.elements).toHaveLength(105)
+
+    // Undo bi trebao raditi do 100 puta (najnovije 100 commanda), nakon toga
+    // stack je prazan jer su najstariji tiho izbačeni.
+    let undone = 0
+
+    while (cm.undo()) {
+      undone++
+    }
+
+    expect(undone).toBe(100)
+    expect(doc.elements).toHaveLength(5) // prvih 5 se ne mogu poništiti
   })
 })

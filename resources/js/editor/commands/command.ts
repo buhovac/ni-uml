@@ -13,6 +13,9 @@ export interface Command {
   undo(doc: DiagramDocument): void
 }
 
+/** Maksimalna dubina undo historyja — najstariji command se tiho izbacuje. */
+const MAX_UNDO_STACK_SIZE = 100
+
 export class CommandManager {
   private undoStack: Command[] = []
   private redoStack: Command[] = []
@@ -25,7 +28,7 @@ export class CommandManager {
 
   dispatch(cmd: Command): void {
     cmd.execute(this.doc)
-    this.undoStack.push(cmd)
+    this.pushUndo(cmd)
     this.redoStack = [] // nova akcija briše redo granu (US05)
     this.touch(cmd)
   }
@@ -52,10 +55,18 @@ return false
 }
 
     cmd.execute(this.doc)
-    this.undoStack.push(cmd)
+    this.pushUndo(cmd)
     this.touch(cmd)
 
     return true
+  }
+
+  private pushUndo(cmd: Command): void {
+    this.undoStack.push(cmd)
+
+    if (this.undoStack.length > MAX_UNDO_STACK_SIZE) {
+      this.undoStack.shift()
+    }
   }
 
   get canUndo(): boolean {

@@ -1,4 +1,6 @@
 import type {
+  ConnectionLabel,
+  ConnectionStyle,
   DiagramConnection,
   DiagramDocument,
   DiagramElement,
@@ -265,6 +267,54 @@ return
     if (this.removed) {
       doc.connections.splice(this.removed.index, 0, this.removed.connection)
     }
+  }
+}
+
+/* ------------------------------------------------------------------ */
+
+/** Generički patch za style/labels veze — sprema prethodno stanje za undo. */
+export class UpdateConnectionCommand implements Command {
+  readonly name = 'update-connection'
+  private before?: { style: ConnectionStyle; labels: ConnectionLabel[] }
+
+  constructor(
+    private readonly id: string,
+    private readonly patch: {
+      style?: Record<string, unknown>
+      labels?: ConnectionLabel[]
+    },
+  ) {}
+
+  execute(doc: DiagramDocument): void {
+    const conn = doc.connections.find((c) => c.id === this.id)
+
+    if (!conn) {
+return
+}
+
+    this.before ??= {
+      style: structuredClone(conn.style),
+      labels: structuredClone(conn.labels),
+    }
+
+    if (this.patch.style) {
+Object.assign(conn.style, this.patch.style)
+}
+
+    if (this.patch.labels) {
+conn.labels = structuredClone(this.patch.labels)
+}
+  }
+
+  undo(doc: DiagramDocument): void {
+    const conn = doc.connections.find((c) => c.id === this.id)
+
+    if (!conn || !this.before) {
+return
+}
+
+    conn.style = structuredClone(this.before.style)
+    conn.labels = structuredClone(this.before.labels)
   }
 }
 
