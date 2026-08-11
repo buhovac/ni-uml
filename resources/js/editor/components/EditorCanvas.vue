@@ -105,3 +105,29 @@ function onConnect(connection: Connection): void {
         </VueFlow>
     </section>
 </template>
+
+<style>
+/*
+ * Vue Flow-ov edges SVG sloj (.vue-flow__edges) je po defaultu
+ * position:static bez z-indexa. Svaki .vue-flow__node dobije inline
+ * z-index (CSS pravilo: pozicionirani elementi sa z-indexom uvijek crtaju
+ * IZNAD nepozicioniranih), pa veza prema elementu unutar system boundaryja
+ * ispadne vizuelno sakrivena ispod boundaryjevog opaque filla — koordinate
+ * su ispravne (Vue Flow ih već računa apsolutno preko computedPosition),
+ * problem je čisto slojevni. svg-exporter.ts nema ovaj problem jer tamo se
+ * SVE veze crtaju NAKON svih elemenata (uvijek na vrhu) — ovo je isti
+ * vizuelni ishod za editor, samo kroz CSS umjesto redoslijeda crtanja.
+ *
+ * .vue-flow__edges je javna, dokumentirana klasa iz Vue Flow-ovog
+ * isporučenog stylesheeta (namijenjena override-u — theme-default.css je
+ * eksplicitno označen kao "optional" u njihovoj dokumentaciji), ne interni
+ * API. Namjerno NIJE scoped (Vue Flow-ove DOM elemente ne renderira ovaj
+ * template, scoped atribut ih ne bi pogodio — isto pravilo kao za CSS
+ * importe u <script>, vidi Vue Flow README).
+ */
+.vue-flow .vue-flow__edges {
+    position: absolute !important;
+    inset: 0;
+    z-index: 1000 !important;
+}
+</style>
