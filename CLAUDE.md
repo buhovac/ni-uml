@@ -89,6 +89,16 @@ umjesto da tiho odlučiš koje pravilo vrijedi.
   odluku koja zaslužuje ADR, predloži novi ADR fajl (npr.
   `docs/adr/000X-naziv.md` sa statusom "predloženo") i to jasno istakni u
   sažetku — nikad tiho ne redefiniraj postojeći ADR.
+  - **Ne push-aj branch, ne otvaraj PR, ne merge-aj.** Commituj lokalno na svoj
+  branch i stani — push i sve dalje radi čovjek nakon review-a. Ovo je
+  namjerno: tvoj proces nema pouzdan pristup git credentialima koje ima
+  interaktivni terminal, i push je zadnja linija ljudske provjere prije nego
+  bilo šta napusti lokalnu mašinu.
+- **Nikad ne diraj branch main lokalno** — ne radi checkout main, reset,
+  merge u main, cherry-pick na main, niti bilo koju sinhronizaciju
+  main-a s originom. Ako primijetiš da je main divergirao od origin/main ili
+  da nešto s tvojim branchom to zahtijeva, STANI i prijavi to u sažetku kao
+  blokirano — ne pokušavaj to sam popraviti, čak ni uz backup.
 
 ## Interaktivni prompti i credentials
 
