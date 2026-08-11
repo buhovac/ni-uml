@@ -17,9 +17,10 @@ import {
   ChangeParentCommand,
   MoveElementsCommand,
   ResizeElementCommand
-  
+
 } from '../commands/commands'
-import type {BoxState} from '../commands/commands';
+import type {BoxState, ElementMove} from '../commands/commands';
+import { absolutePosition, elementsById } from '../geometry/geometry'
 import type {
   DiagramConnection,
   DiagramDocument,
@@ -35,7 +36,6 @@ export interface VfNode {
   type: string
   position: Vec2
   parentNode?: string
-  extent?: 'parent'
   zIndex: number
   width: number
   height: number
@@ -63,7 +63,11 @@ export function elementToVfNode(el: DiagramElement): VfNode {
     type: toVfType(el.type),
     position: { ...el.position },
     parentNode: el.parentId,
-    extent: el.parentId ? 'parent' : undefined,
+    // NEMA extent:'parent' (bilo u P3a) — reparent-dragom (P3b) zahtijeva
+    // da dijete MOŽE biti odvučeno IZVAN roditeljskog boundaryja (to je
+    // signal za dragStopToCommands da ga vrati na root). Vue Flow-ov
+    // extent:'parent' bi to spriječio klampanjem drag-a na roditeljev
+    // bounding box.
     zIndex: el.zIndex,
     width: el.size.width,
     height: el.size.height,
@@ -156,28 +160,102 @@ function edgesEqual(a: VfEdge, b: VfEdge): boolean {
  * stranica šalje u CommandManager.dispatch().
  */
 
-/** @node-drag-stop → MoveElementsCommand (jedan command za cijeli drag). */
-export function dragStopToCommand(
+/**
+ * Boundary čiji apsolutni bounding box sadrži zadanu apsolutnu tačku
+ * (za reparent-dragom, P3b). System-boundary elementi se međusobno ne
+ * mogu ugnijezditi u ovom paketu (nema nested boundaryja).
+ */
+function findBoundaryContaining(
+  point: Vec2,
+  doc: DiagramDocument,
+  excludeId: string,
+  byId: Map<string, DiagramElement>,
+): DiagramElement | undefined {
+  return doc.elements.find((el) => {
+    if (el.id === excludeId || el.type !== 'uml.system-boundary') {
+      return false
+    }
+
+    const abs = absolutePosition(el, byId)
+
+    return (
+      point.x >= abs.x &&
+      point.x <= abs.x + el.size.width &&
+      point.y >= abs.y &&
+      point.y <= abs.y + el.size.height
+    )
+  })
+}
+
+/**
+ * @node-drag-stop → jedan Command po pomjerenom elementu (u praksi uvijek
+ * tačno jedan, jer editor trenutno podržava samo single selection — vidi
+ * editor-context.ts).
+ *
+ * Za system-boundary elemente uvijek MoveElementsCommand (nema ugniježđenih
+ * boundaryja u ovom paketu). Za ostale tipove: ako je centar elementa NAKON
+ * drag-a unutar bounding boxa nekog boundaryja koji trenutno nije njegov
+ * parent → ChangeParentCommand s apsolutnom pozicijom preračunatom u
+ * relativnu prema tom boundaryju. Ako je element ranije imao parenta a
+ * centar mu više nije ni u jednom boundaryju → ChangeParentCommand s
+ * parentId: undefined i apsolutnom pozicijom. Inače (parent se ne mijenja)
+ * → MoveElementsCommand kao dosad.
+ */
+export function dragStopToCommands(
   dragged: { id: string; position: Vec2 }[],
   doc: DiagramDocument,
-): Command | null {
-  const moves = dragged
-    .map((d) => {
-      const el = doc.elements.find((e) => e.id === d.id)
+): Command[] {
+  const byId = elementsById(doc)
+  const plainMoves: ElementMove[] = []
+  const commands: Command[] = []
 
-      if (!el) {
-return null
+  for (const d of dragged) {
+    const el = doc.elements.find((e) => e.id === d.id)
+
+    if (!el) {
+continue
 }
 
-      if (el.position.x === d.position.x && el.position.y === d.position.y) {
-return null
-}
+    const unchanged = el.position.x === d.position.x && el.position.y === d.position.y
 
-      return { id: d.id, from: { ...el.position }, to: { ...d.position } }
-    })
-    .filter((m): m is NonNullable<typeof m> => m !== null)
+    if (el.type === 'uml.system-boundary') {
+      if (!unchanged) {
+        plainMoves.push({ id: d.id, from: { ...el.position }, to: { ...d.position } })
+      }
 
-  return moves.length > 0 ? new MoveElementsCommand(moves) : null
+      continue
+    }
+
+    const parent = el.parentId ? byId.get(el.parentId) : undefined
+    const parentAbs = parent ? absolutePosition(parent, byId) : { x: 0, y: 0 }
+    const newAbsolute = { x: parentAbs.x + d.position.x, y: parentAbs.y + d.position.y }
+    const center = {
+      x: newAbsolute.x + el.size.width / 2,
+      y: newAbsolute.y + el.size.height / 2,
+    }
+    const targetBoundary = findBoundaryContaining(center, doc, el.id, byId)
+
+    if (targetBoundary && targetBoundary.id !== el.parentId) {
+      const boundaryAbs = absolutePosition(targetBoundary, byId)
+
+      commands.push(
+        new ChangeParentCommand(el.id, targetBoundary.id, {
+          x: newAbsolute.x - boundaryAbs.x,
+          y: newAbsolute.y - boundaryAbs.y,
+        }),
+      )
+    } else if (!targetBoundary && el.parentId) {
+      commands.push(new ChangeParentCommand(el.id, undefined, newAbsolute))
+    } else if (!unchanged) {
+      plainMoves.push({ id: d.id, from: { ...el.position }, to: { ...d.position } })
+    }
+  }
+
+  if (plainMoves.length > 0) {
+    commands.push(new MoveElementsCommand(plainMoves))
+  }
+
+  return commands
 }
 
 /** Node-resizer resize-end → ResizeElementCommand. */
