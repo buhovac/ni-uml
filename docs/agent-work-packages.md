@@ -18,11 +18,18 @@ Status legenda: ✅ gotovo · 🔜 sljedeće · ⬜ čeka na red
 Gotovo, na `main`.
 
 ## ✅ P1 — Etapa 1: Arhitektonski spike
-Gotovo, na `main`. `EditorSpike.vue` je privremen — brisat će se u P3.
+**Napomena (P3a sesija, 2026-08-11):** ova stavka je bila označena gotovom,
+ali `EditorSpike.vue` nikad nije postojao u historiji (ni lokalno ni na
+`origin/main`) — dokument model, adapter i SVG exporter su isporučeni u
+skeletonu, ali "dokaz u browseru" (Vue Flow wiring, custom node komponente)
+nikad nije napravljen kao zaseban korak. Umjesto da se to radi retroaktivno
+kao izgubljeni P1, taj rad je odrađen unutar P3a (vidi niže) jer je P3a
+svejedno zahtijevao isti Vue Flow wiring da bi trajna stranica uopće mogla
+postojati.
 
 ---
 
-## 🔜 P2 — Etapa 2+3 dovršetak: model, Ajv runtime, command sustav
+## ✅ P2 — Etapa 2+3 dovršetak: model, Ajv runtime, command sustav
 
 **Ulaz:** stanje nakon P1. **Opseg:**
 - Uključiti Ajv validaciju u stvarni tok (validacija pri `parseDocument` i prije
@@ -42,7 +49,7 @@ zeleni.
 
 ---
 
-## ⬜ P3a — Etapa 4+5 dio 1: editor shell + registry-driven toolbar
+## ✅ P3a — Etapa 4+5 dio 1: editor shell + registry-driven toolbar
 
 **Ulaz:** P2 mergean. **Opseg:**
 - Trajna editor stranica (zamjenjuje `EditorSpike.vue`, koji se briše).
@@ -56,6 +63,17 @@ zeleni.
 
 **Izlaz:** editor stranica dostupna na ruti (bez auth za sada), toolbar
 pokriva sva 4 elementa iz registryja bez ijedne hardkodirane reference na tip.
+
+**Odrađeno (2026-08-11):** `resources/js/pages/Editor.vue` na ruti `/editor`
+(izvan auth grupe), 4 zone, toolbar generiran iz `umlUseCaseRegistry.nodes`.
+Kako `factory.ts` i `editor-context.ts` nisu postojali (vidi napomenu kod P1),
+napravljeni su u ovoj sesiji zajedno s Vue Flow custom node komponentama
+(actor/use-case/system-boundary/note) — bez toga trajna stranica ne bi imala
+šta zamijeniti. Custom edge vizualizacija po UML tipu veze (dashed include/
+extend, hollow triangle generalization) NIJE rađena — Vue Flow trenutno crta
+sve veze kao built-in `straight`; connect gesture ipak sprema ispravan
+`DiagramConnection.type`/stil u model, pa je to samo pitanje dodavanja edge
+komponenti kasnije, ne promjene modela.
 
 ---
 
