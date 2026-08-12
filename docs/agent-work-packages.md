@@ -111,6 +111,37 @@ Namjerno NE označavam milestone M4/M5 u `docs/plan.md` kao potpuno
 gotov dok resize ne postoji — to je odluka za review, ne tiha
 pretpostavka.
 
+**Gap zatvoren u P3c** (vidi niže) — resize UI je sad rađen za
+use-case/system-boundary/note (actor namjerno izuzet).
+
+---
+
+## ✅ P3c — Etapa 4+5 dovršetak: resize UI
+
+**Ulaz:** P3b mergean. **Opseg:** `@vue-flow/node-resizer` (već
+dependency od Etape 0) na `uml.use-case`/`uml.system-boundary`/`uml.note`
+node komponentama, vidljiv samo kad je node selektiran; resize-end →
+`resizeEndToCommand` → `ResizeElementCommand` kroz `CommandManager`; donja
+granica veličine po tipu elementa (`NodeDefinition.minSize`, novo polje u
+registryju). `uml.actor` namjerno BEZ resiza — `ACTOR_GEOMETRY` omjeri
+pretpostavljaju fiksni omjer širina:visina stick-figure.
+
+**Odrađeno (2026-08-12):** `resize-handler.ts` (dijeljena
+`dispatchResizeEnd` funkcija) — svaka od 3 node komponente injecta
+`EDITOR_CONTEXT_KEY` i dispatcha direktno (isti obrazac kao
+`EditorToolbar.vue`, ne mora ići kroz `EditorCanvas.vue`). Dodano 3 nova
+unit testa za `resizeEndToCommand`/`dispatchResizeEnd` — ovaj kod je
+postojao od P2 ali nikad nije imao testove jer ga ništa nije pozivalo.
+
+Ručno vizuelno provjereno u browseru (ne samo testovi): resize handleovi
+0 prije selekcije / 8 nakon selekcije use casea / 0 za actora (potvrđuje
+namjerno izuzeće); resize mijenja stvarnu veličinu u modelu (debug
+panel/JSON); undo vraća tačnu prethodnu veličinu; min-size klampa radi
+(note klampiran tačno na 60×50); tekst se čitljivo prelama na maloj
+veličini bez preklapanja (ellipse label "Use Case" → dva reda pri
+minSize 80×50, i dalje čitljivo). Regresija: drag+connect+resize
+zajedno, pa 3× undo — sve se ispravno odmotava.
+
 ---
 
 ## ⬜ P4 — Etapa 6: Properties panel + uređivanje teksta
