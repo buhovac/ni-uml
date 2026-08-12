@@ -107,7 +107,7 @@ unatrag i ponovno unaprijed bez oštećenja dokumenta.
 
 ---
 
-## Etapa 4+5 — Editor UX i UML Use Case plugin (registry-driven, stopljeno)
+## Etapa 4+5 — Editor UX i UML Use Case plugin (registry-driven, stopljeno) ✅
 
 **Cilj:** pretvoriti spike u upotrebljiv editor, odvojeno od UML-specifičnih elemenata.
 
@@ -139,6 +139,10 @@ obriši → undo vrati.
 Case dijagram samo kroz UI, bez konzole ili ručnog JSON-a, bez generičkih placeholdera.
 
 **Procjena:** 2–3 tjedna (spojene etape).
+
+> **Status: gotovo (P3a + P3b + P3c).** Resize dodan naknadno kao mikro-paket
+> P3c nakon što je otkriven kao gap u P3a/P3b opsegu. Properties panel
+> (placeholder u desnom panelu) namjerno nije dio ove etape — to je Etapa 6.
 
 ---
 
