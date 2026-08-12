@@ -35,6 +35,14 @@
  * ctx.selection (dijeljen s tipkovničkim prečacima) iz Vue Flow-ovog
  * getSelectedNodes, i node komponente čitaju props.selected za vizuelnu
  * oznaku (nema paralelnog selection sistema).
+ *
+ * RESIZE (P3c): <NodeResizer> se renderira UNUTAR svake node komponente
+ * (UseCaseNode/SystemBoundaryNode/NoteNode — uml.actor nema resize), ne
+ * ovdje — dispatch na resize-end ide direktno iz te komponente kroz
+ * inject(EDITOR_CONTEXT_KEY), isti obrazac kao EditorToolbar.vue
+ * (dispatch direktno iz komponente, ne samo iz EditorCanvas.vue). Import
+ * node-resizer CSS-a je ovdje centraliziran (kao i core/controls CSS)
+ * iako se komponenta koristi u node fajlovima.
  */
 import { Controls } from '@vue-flow/controls';
 import '@vue-flow/controls/dist/style.css';
@@ -47,6 +55,7 @@ import type {
 } from '@vue-flow/core';
 import '@vue-flow/core/dist/style.css';
 import '@vue-flow/core/dist/theme-default.css';
+import '@vue-flow/node-resizer/dist/style.css';
 import { inject, watch } from 'vue';
 import { EDITOR_CONTEXT_KEY } from '../adapter/editor-context';
 import { dragStopToCommands } from '../adapter/vueflow-adapter';

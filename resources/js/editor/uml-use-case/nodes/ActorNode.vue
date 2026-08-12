@@ -15,6 +15,13 @@
  *
  * Stil (stroke/strokeWidth) je za sada uvijek defaultStyle iz registryja —
  * per-element style override dolazi s properties panelom (P4/P6).
+ *
+ * BEZ resize UI-ja (P3c, namjerna odluka): ACTOR_GEOMETRY omjeri
+ * (headRadiusRatio, shoulderY, hipY...) pretpostavljaju fiksni omjer
+ * širina:visina figure — proizvoljan resize bi razvukao stick-figuru
+ * neproporcionalno (isti tip problema kao Bug 1 iz P3a-fixes, samo
+ * uzrokovan korisničkom akcijom umjesto viewBox-a). Vidi otvoreno pitanje
+ * u sažetku sesije ako se ovo treba revidirati.
  */
 import type { NodeProps } from '@vue-flow/core';
 import { computed } from 'vue';
