@@ -66,6 +66,7 @@ const useCase: NodeDefinition = {
   anchors: STANDARD_ANCHORS,
   // Elipsa "jede" kutove — veći padding da tekst ostane unutar oblika.
   textPadding: { x: 24, y: 14 },
+  minSize: { width: 80, height: 50 },
 }
 
 const systemBoundary: NodeDefinition = {
@@ -82,6 +83,7 @@ const systemBoundary: NodeDefinition = {
   anchors: STANDARD_ANCHORS,
   isContainer: true,
   textPadding: { x: 12, y: 10 },
+  minSize: { width: 120, height: 100 },
 }
 
 const note: NodeDefinition = {
@@ -97,6 +99,7 @@ const note: NodeDefinition = {
   },
   anchors: STANDARD_ANCHORS,
   textPadding: { x: 12, y: 12 },
+  minSize: { width: 60, height: 50 },
 }
 
 const association: EdgeDefinition = {

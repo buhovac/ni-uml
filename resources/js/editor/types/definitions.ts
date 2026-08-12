@@ -35,6 +35,8 @@ export interface NodeDefinition {
   isContainer?: boolean
   /** Padding za text wrapping — koristi ga i editor i exporter. */
   textPadding: { x: number; y: number }
+  /** Donja granica za resize UI (P3c) — nedefinirano znači tip nema resize (npr. uml.actor). */
+  minSize?: Size
 }
 
 export interface EdgeDefinition {

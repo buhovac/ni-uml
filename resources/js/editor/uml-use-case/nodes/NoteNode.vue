@@ -2,21 +2,34 @@
 /**
  * Vue Flow prikaz uml.note — presavijeni ugao (folded corner), isti oblik
  * kao SVG exporter (renderElement 'uml.note'), normaliziran na 0..100.
+ *
+ * Resize (P3c): vidi napomenu u UseCaseNode.vue — isti obrazac. fold=16 je
+ * u normaliziranom 0..100 prostoru (preserveAspectRatio="none"), pa ostaje
+ * proporcionalan bez obzira na stvarnu veličinu nakon resiza.
  */
 import type { NodeProps } from '@vue-flow/core';
-import { computed } from 'vue';
+import { NodeResizer } from '@vue-flow/node-resizer';
+import type { OnResizeEnd } from '@vue-flow/node-resizer';
+import { computed, inject } from 'vue';
+import { EDITOR_CONTEXT_KEY } from '../../adapter/editor-context';
 import { umlUseCaseRegistry } from '../definitions';
+import { dispatchResizeEnd } from './resize-handler';
 import { strokeStyleFor } from './selection-style';
 import UmlNodeHandles from './UmlNodeHandles.vue';
 
 const props = defineProps<NodeProps<{ text: string; elementType: string }>>();
 
+const ctx = inject(EDITOR_CONTEXT_KEY)!;
 const def = umlUseCaseRegistry.nodes['uml.note'];
 const style = def.defaultStyle;
 const strokeStyle = computed(() => strokeStyleFor(style, props.selected));
 const fold = 16;
 const bodyPath = `M 0 0 H ${100 - fold} L 100 ${fold} V 100 H 0 Z`;
 const cornerPath = `M ${100 - fold} 0 V ${fold} H 100`;
+
+function onResizeEnd(event: OnResizeEnd): void {
+    dispatchResizeEnd(props.id, event, ctx);
+}
 </script>
 
 <template>
@@ -25,6 +38,13 @@ const cornerPath = `M ${100 - fold} 0 V ${fold} H 100`;
         :data-testid="`element-${props.id}`"
         data-element-type="uml.note"
     >
+        <NodeResizer
+            :node-id="props.id"
+            :is-visible="props.selected"
+            :min-width="def.minSize?.width"
+            :min-height="def.minSize?.height"
+            @resize-end="onResizeEnd"
+        />
         <svg
             viewBox="0 0 100 100"
             preserveAspectRatio="none"
