@@ -77,7 +77,7 @@ komponenti kasnije, ne promjene modela.
 
 ---
 
-## ⬜ P3b — Etapa 4+5 dio 2: interakcije + reparent + Playwright happy path
+## ✅ P3b — Etapa 4+5 dio 2: interakcije + reparent + Playwright happy path
 
 **Ulaz:** P3a mergean. **Opseg:**
 - Vue Flow u controlled modeu (`:apply-default="false"`), filtriranje
@@ -90,6 +90,26 @@ komponenti kasnije, ne promjene modela.
   → selektiraj → obriši → undo vrati (iz `docs/plan.md` Etapa 4 specifikacije).
 
 **Izlaz:** `docs/plan.md` P3 (4+5) označen gotovim; Playwright test zelen u CI.
+
+**Odrađeno (2026-08-11):** sve stavke opsega implementirane i ručno
+vizuelno provjerene u browseru (ne samo automatizirani testovi — vidi
+sažetak sesije). Usput otkriveno i popravljeno: `extent:'parent'` iz P3a
+(u `vueflow-adapter.ts`) je Vue Flow-ovim ugrađenim ograničenjem
+KLAMPOVAO drag djeteta unutar granica roditelja, čineći reparent-IZVAN
+boundaryja fizički nemogućim bez obzira na logiku u `dragStopToCommands`
+— uklonjeno. Klik-selekcija je Vue Flow-ova UGRAĐENA logika (radi bez
+apply-default), ne novo napisan kod — samo je sinhronizirana u
+`ctx.selection`.
+
+**Napomena — Etapa 4+5 NIJE u potpunosti završena ovim paketom:**
+`docs/plan.md`-ov puni opis Etape 4+5 uključuje i **resize** (promjena
+veličine elementa mišem/handle-ovima) kao dio "Editor" liste interakcija.
+Resize UI (`NodeResizer` iz `@vue-flow/node-resizer`, već je dependency)
+nije rađen ni u P3a ni u P3b — `ResizeElementCommand` i
+`resizeEndToCommand` postoje u kodu od P2/P3a, ali ništa ih ne poziva.
+Namjerno NE označavam milestone M4/M5 u `docs/plan.md` kao potpuno
+gotov dok resize ne postoji — to je odluka za review, ne tiha
+pretpostavka.
 
 ---
 

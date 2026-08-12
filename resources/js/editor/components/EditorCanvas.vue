@@ -1,27 +1,55 @@
 <script setup lang="ts">
 /**
  * Centralna zona: Vue Flow canvas. Prevodi Vue Flow evente u Commande kroz
- * adapter (dragStopToCommand) i factory (createConnection) — nikad ne
+ * adapter (dragStopToCommands) i factory (createConnection) — nikad ne
  * mutira doc direktno (ADR-0002).
  *
- * Vue Flow je za sada u default (apply-default) modu za nodeove — puni
- * controlled mode (:apply-default="false") s NodeChange/EdgeChange
- * filtriranjem dolazi u P3b.
+ * CONTROLLED MODE (P3b): `:apply-default="false"` isključuje Vue Flow-ovo
+ * automatsko primjenjivanje promjena na SVOJ interni store. `nodes`/`edges`
+ * propovi ostaju STRIKTNO jednosmjerni (nema v-model) — jedini way da se
+ * promjene: `syncProjection()` u editor-context.ts nakon Command dispatcha.
  *
- * Edge tipovi: adapter (vueflow-adapter.ts) već projektuje ispravan
- * `type`/`data.connectionType` po vezi — nije trebalo ništa mijenjati tamo,
- * samo prestati force-overridati ga na Vue Flow-ov built-in 'straight'
- * (kako je bilo u P3a) i registrirati UmlEdge komponentu po tipu.
+ * I dalje ručno zovemo `applyNodeChanges`/`applyEdgeChanges` (store akcije
+ * iz useVueFlow(), ne deprecated standalone utili iz '@vue-flow/core') na
+ * SVAKU promjenu (@nodes-change/@edges-change) — ovo NIJE zaobilaženje
+ * controlled moda, nego namjerna dva sloja: Vue Flow-ov interni store i
+ * dalje daje glatku vizuelnu vrijednost tokom drag-a/selekcije (position,
+ * dimensions, select promjene), ali NIKAD nije izvor istine — `doc` ostaje
+ * jedini izvor istine, a `nodes`/`edges` propovi (izvedeni iz `doc` kroz
+ * projectNodes/projectEdges) uvijek na kraju prevagnu kad se dispatcha
+ * Command (syncProjection generiše nov niz koji Vue Flow ponovo pomiri sa
+ * svojim internim stanjem). Provjereno u node_modules/@vue-flow/core/dist:
+ * ovo je tačno isti mehanizam koji `applyDefault:true` radi automatski
+ * (watch na state.applyDefault kači/skida isti handler) — razlika je što
+ * SADA MI biramo šta se primjenjuje, umjesto da se to desi bez naše
+ * kontrole.
+ *
+ * `delete-key-code="null"` gasi Vue Flow-ov vlastiti Backspace-delete
+ * (postoji po defaultu, radi direktno na internom storeu mimo
+ * CommandManagera) — brisanje ide ISKLJUČIVO kroz
+ * createKeyboardShortcutHandler (keyboard-shortcuts.ts) → DeleteElementsCommand.
+ *
+ * SELEKCIJA (klik na node, klik na prazan canvas = deselect) je Vue
+ * Flow-ova UGRAĐENA logika (handleNodeClick/onPaneClick u izvoru) — nije
+ * gated iza apply-default, radi već "besplatno". Mi samo SINHRONIZUJEMO
+ * ctx.selection (dijeljen s tipkovničkim prečacima) iz Vue Flow-ovog
+ * getSelectedNodes, i node komponente čitaju props.selected za vizuelnu
+ * oznaku (nema paralelnog selection sistema).
  */
 import { Controls } from '@vue-flow/controls';
 import '@vue-flow/controls/dist/style.css';
-import { ConnectionMode, VueFlow } from '@vue-flow/core';
-import type { Connection, NodeDragEvent } from '@vue-flow/core';
+import { ConnectionMode, useVueFlow, VueFlow } from '@vue-flow/core';
+import type {
+    Connection,
+    EdgeChange,
+    NodeChange,
+    NodeDragEvent,
+} from '@vue-flow/core';
 import '@vue-flow/core/dist/style.css';
 import '@vue-flow/core/dist/theme-default.css';
-import { inject } from 'vue';
+import { inject, watch } from 'vue';
 import { EDITOR_CONTEXT_KEY } from '../adapter/editor-context';
-import { dragStopToCommand } from '../adapter/vueflow-adapter';
+import { dragStopToCommands } from '../adapter/vueflow-adapter';
 import { AddConnectionCommand } from '../commands/commands';
 import UmlEdge from '../uml-use-case/edges/UmlEdge.vue';
 import UmlEdgeMarkers from '../uml-use-case/edges/UmlEdgeMarkers.vue';
@@ -34,14 +62,31 @@ import UseCaseNode from '../uml-use-case/nodes/UseCaseNode.vue';
 const ctx = inject(EDITOR_CONTEXT_KEY)!;
 const { nodes, edges, activeConnectionType } = ctx;
 
+const { applyNodeChanges, applyEdgeChanges, getSelectedNodes } = useVueFlow(
+    ctx.flowId,
+);
+
+// Vue Flow-ova selekcija je ugrađena (radi bez apply-default) — samo je
+// ogledamo u ctx.selection da keyboard-shortcuts.ts ima na čemu raditi.
+watch(getSelectedNodes, (selected) => {
+    ctx.selection.value = selected.map((n) => n.id);
+});
+
+function onNodesChange(changes: NodeChange[]): void {
+    applyNodeChanges(changes);
+}
+
+function onEdgesChange(changes: EdgeChange[]): void {
+    applyEdgeChanges(changes);
+}
+
 function onNodeDragStop(event: NodeDragEvent): void {
     const dragged = event.nodes.map((n) => ({
         id: n.id,
         position: { x: n.position.x, y: n.position.y },
     }));
-    const cmd = dragStopToCommand(dragged, ctx.doc);
 
-    if (cmd) {
+    for (const cmd of dragStopToCommands(dragged, ctx.doc)) {
         ctx.commandManager.dispatch(cmd);
     }
 }
@@ -67,10 +112,16 @@ function onConnect(connection: Connection): void {
     <section data-testid="editor-canvas" class="relative h-full min-h-0 w-full">
         <VueFlow
             :id="ctx.flowId"
-            v-model:nodes="nodes"
+            :nodes="nodes"
             :edges="edges"
+            :apply-default="false"
+            :delete-key-code="null"
+            :snap-to-grid="ctx.doc.canvas.snapToGrid"
+            :snap-grid="[ctx.doc.canvas.gridSize, ctx.doc.canvas.gridSize]"
             :connection-mode="ConnectionMode.Loose"
             class="h-full w-full"
+            @nodes-change="onNodesChange"
+            @edges-change="onEdgesChange"
             @node-drag-stop="onNodeDragStop"
             @connect="onConnect"
         >

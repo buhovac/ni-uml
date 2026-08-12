@@ -5,13 +5,16 @@
  * zIndex pri kreiranju (factory.ts), tako da djeca uvijek crtaju iznad.
  */
 import type { NodeProps } from '@vue-flow/core';
+import { computed } from 'vue';
 import { umlUseCaseRegistry } from '../definitions';
+import { strokeStyleFor } from './selection-style';
 import UmlNodeHandles from './UmlNodeHandles.vue';
 
 const props = defineProps<NodeProps<{ label: string; elementType: string }>>();
 
 const def = umlUseCaseRegistry.nodes['uml.system-boundary'];
 const style = def.defaultStyle;
+const strokeStyle = computed(() => strokeStyleFor(style, props.selected));
 </script>
 
 <template>
@@ -31,8 +34,8 @@ const style = def.defaultStyle;
                 width="100"
                 height="100"
                 :fill="style.fill"
-                :stroke="style.stroke"
-                :stroke-width="style.strokeWidth"
+                :stroke="strokeStyle.stroke"
+                :stroke-width="strokeStyle.strokeWidth"
             />
         </svg>
         <div

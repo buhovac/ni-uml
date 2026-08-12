@@ -4,9 +4,12 @@
  * state. Izloženo kroz provide/inject da EditorTopBar/EditorToolbar/
  * EditorCanvas/PropertiesPanel ne moraju prop-drillati svaki komad zasebno.
  *
- * Puna selection logika (klik, deselect, delete-selektiranog) dolazi u P3b
- * — ovdje je `selection` namjerno prazan niz koji ništa ne popunjava, samo
- * postoji da tipkovnički prečaci (Delete/Escape) imaju na čemu raditi.
+ * `selection` (P3b): jedan ili nula ID-eva (single selection). Populira ga
+ * EditorCanvas.vue tako što ogleda Vue Flow-ovu UGRAĐENU selekciju
+ * (getSelectedNodes iz useVueFlow — klik na node/pane je Vue Flow-ova
+ * vlastita logika, ne paralelni sistem), da tipkovnički prečaci
+ * (keyboard-shortcuts.ts: Delete/Backspace/Escape) i node komponente
+ * (vizuelna oznaka preko props.selected) dijele isto stanje.
  */
 import type { InjectionKey, Ref } from 'vue';
 import { reactive, ref } from 'vue';
